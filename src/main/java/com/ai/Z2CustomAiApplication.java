@@ -106,7 +106,7 @@ public class Z2CustomAiApplication {
 
 //  
 //  
-//  Pinecone pc = new Pinecone.Builder("pcsk_3ZLDAm_LXkQncYMKCkzpttp7L3A5fkXenEbB2tvZnfEvJZLw4G8mukD74ExzEpqABWvhTe").build();
+//  Pinecone pc = new Pinecone.Builder("pcsk_3ZLDAm_LXkQncYMKCkzpniorhnfkXenEbB2tvZnfEvJZLw4G8mukD74ExzEpqABWvhTe").build();
 //  Index index = pc.getIndexConnection("my-software-docs");
 //  List<String> ids = Arrays.asList("01a6d994-3665-4270-a327-e91102d95263",
 //		  "7a4ef7ff-37aa-45c8-bae7-09c52a639375",
