@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: z2_CustomAI
+  jmx:
+    enabled: false  
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding.model: mxbai-embed-large
+      chat:
+        options:
+          model: llama3.2
+          temperature: 0.5
+    vectorstore:
+      pinecone:
+        api-key: ${PINECONE_API_KEY} #API key
+        environment: us-east1-gcp             #correct Pinecone environment format
+        index-name: my-software-docs
+#        namespace: sql_docs       
+
+
+
+
+server:
+  port: 9999
+
+  # set PINECONE_API_KEY = pcsk_3ZLDAm_LXkQncYMKCkzpttp7L3A5fkXenEbB2tvZnfEvJZLw4G8mukD74ExzEpqABWvhTe
