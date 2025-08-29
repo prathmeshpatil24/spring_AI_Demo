@@ -12,7 +12,9 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OllamaConfig {
-	
+
+
+//	bean for chat memory
 	@Bean
     public ChatMemory chatMemory() {
         // In Spring AI 1.0.1, use MessageWindowChatMemory
@@ -27,12 +29,4 @@ public class OllamaConfig {
 	  
 	   return ChatClient.create(ollamaChatModel);
     }
-   
-   
-   @Bean
-   public OllamaConnectionDetails ollamaConnectionDetails() {
-       return () -> "http://localhost:11434";  // Ollama server URL
-   }
-
-
 }

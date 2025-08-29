@@ -33,8 +33,7 @@ public class ChatService {
 		 this.vectorStore = vectorStore;
 		 this.chatClient = chatClient;
 	}
-	
-	
+
 	private static String sanitizeInput(String input) {
 		String[] forbiddenPatterns= {
 				 "ignore previous instructions",
@@ -63,9 +62,7 @@ public class ChatService {
 	    }
 	    return true;
 	}
-	
-	
-	
+
 	public String getAnswer(String query) {
 		 // Step 1: Sanitize user query
 	    String safeQuery = sanitizeInput(query);
@@ -98,40 +95,35 @@ public class ChatService {
                         "\nMetadata: " + doc.getMetadata())
                 .collect(Collectors.joining("\n--\n"));
         System.out.println(context);
+
+        //		to maintain chat history
+        List<Message> conversationHistory = chatMemory.get("conversation1");
 		
 		 // Step 3: Build a proper prompt for the LLM
-		//this will still give ans if query is not rlated to context
-//        String prompt = "You are a helpful assistant. Use the following context to answer:\n\n"
-//                + context
-//                + "\n\nQuestion: " + query
-//                + "\nAnswer:";
-		
-//		to maintain chat history
-		List<Message> conversationHistory = chatMemory.get("conversation1");
-		
 //		this will give ans only if query is related to context otherwise it will say no relevant info
-		String prompt = "You are a strict assistant. ONLY use the provided context to answer.\n" +
-				"If the context does not contain the answer, just say: 'Sorry, I could not find relevant information in the documents. '\n" +
-				"Do NOT use outside knowledge.\n\n" +
-				"Context:\n" + context +
-				"\n\nQuestion: " + query +
-				"\nAnswer:";
+        String prompt = "You are an AI assistant. Follow these strict instructions:\n" +
+                "1. ONLY answer based on the provided context.\n" +
+                "2. Do NOT use any outside knowledge or assumptions.\n" +
+                "3. If the context does not contain the answer, respond exactly with: " +
+                "'Sorry, I could not find relevant information in the documents.'\n" +
+                "4. Keep your answer concise, clear, and factual.\n" +
+                "=== Context Start ===\n" + context + "\n=== Context End ===\n\n" +
+                "Question: " + query + "\n" +
+                "Answer:";
 
-
-        
         // Step 4: Ask the LLM with retrieved context
 		String formating = """
-				You are a helpful assistant. 
-				Only use the provided context to answer the question. 
-				Do not use outside knowledge. 
-				If the answer is not in the context, say: 
+				You are a helpful assistant.
+				Only use the provided context to answer the question.
+				Do not use outside knowledge.
+				If the answer is not in the context, say:
 				"Sorry, I could not find relevant information in the documents."
 
 				When answering:
-				- Present the information in a clear and structured way.  
-				- Use bullet points, numbered lists, or tables if applicable.  
-				- Highlight key terms in **bold**.  
-				- Keep explanations concise and easy to read.  
+				- Present the information in a clear and structured way.
+				- Use bullet points, numbered lists, or tables if applicable.
+				- Highlight key terms in **bold**.
+				- Keep explanations concise and easy to read.
 				""";
 		ChatResponse chatResponse = chatClient
 		        .prompt()

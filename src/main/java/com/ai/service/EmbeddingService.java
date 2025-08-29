@@ -52,36 +52,16 @@ public class EmbeddingService {
 	
 //	for list of document embedding
 	public void embedDocument(List<Document>documents) {
-		 // Store documents in VectorStore
-	    vectorStore.add(documents);
-	    System.out.println("Added " + documents.size() + " docs into Vector DB");
-	    
-	 // Pick the first doc’s text
-	    String checkText = documents.get(0).getText();
-	    
-	    List<Document> results = this.vectorStore.similaritySearch(SearchRequest.builder().query(checkText).topK(1).build());
-	    
-	    System.out.println("Verification Results: " + results.size() + "docs found");
-	  
-	}
-	
+        // Store documents in VectorStore
+        vectorStore.add(documents);
+        System.out.println("Added " + documents.size() + " docs into Vector DB");
 
-////	for list of document embedding
-//	public void embedDocument(List<Document> documents, EmbeddingOptions options, BatchingStrategy batchingStrategy) {
-//// Call the embedding model
-//		List<float[]> embeddings = embeddingModel.embed(documents, options, batchingStrategy);
-//
-//// For now, just print them
-//		for (int i = 0; i < embeddings.size(); i++) {
-//			System.out.println("Document " + (i + 1) + " embedding: " + Arrays.toString(embeddings.get(i)));
-//		}
-//
-//        // TODO: Later you can store these embeddings in a Vector DB (like Pinecone, Weaviate, etc.)
-//	
-//		
-//	}
-	
-	
+        // Pick the first doc’s text
+        String checkText = documents.get(0).getText();
 
+        List<Document> results = this.vectorStore.similaritySearch(SearchRequest.builder().query(checkText).topK(1).build());
 
+        System.out.println("Verification Results: " + results.size() + "docs found");
+
+    }
 }

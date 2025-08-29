@@ -2,7 +2,6 @@ package com.ai.controller;
 
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -10,10 +9,8 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,14 +61,15 @@ public class ChatController {
 
 		//main logic to get ans from ai model
         ChatResponse chatResponse = chatClient
-                .prompt(chat) // 1. Send your prompt (the user’s query / message)
+                .prompt() // 1. Send your prompt (the user’s query / message)
+                .system("You are a helpful assistant.")
                 .messages(conversationHistory) // add  the conversion history
-                .system("You are a helpful assistant.") 
+                .user(chat) // 1. Send your prompt (the user’s query / message)
                 .call() // 2. Execute the call to the model
                 .chatResponse(); // 3. Get the structured ChatResponse object
 
        // print the ai model
-        System.out.println(chatResponse.getMetadata().getModel());
+//        System.out.println(chatResponse.getMetadata().getModel());
 
         //build the response in string format
         String response = chatResponse.getResult().getOutput().getText();
