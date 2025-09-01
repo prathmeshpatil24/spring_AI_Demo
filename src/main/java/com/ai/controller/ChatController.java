@@ -85,7 +85,13 @@ public class ChatController {
     
     @GetMapping("/history")
     public List<Message> getHistory() {
-        return chatMemory.get("conversation1");
+        List<Message> conversation1 = chatMemory.get("conversation1");
+        System.out.println("chat history of conversation1:");
+        conversation1.forEach(
+            message -> System.out.println(message.getMessageType() + ": " + message.getText())
+        );
+
+        return conversation1;
     }
     
     @GetMapping("/ClearHistory")

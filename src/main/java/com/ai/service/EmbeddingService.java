@@ -24,10 +24,10 @@ public class EmbeddingService {
 //	for string embedding
 	public float[] getEmbedding(String text) {
 //		for testing purpose
-		float[] response = embeddingModel.embed(text);
-		for(float f: response) {
-			System.out.println(f);
-		}
+//		float[] response = embeddingModel.embed(text);
+//		for(float f: response) {
+//			System.out.println(f);
+//		}
 		
 		return embeddingModel.embed(text);
 	}

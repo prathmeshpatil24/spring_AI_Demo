@@ -24,4 +24,3 @@ spring:
 server:
   port: 9999
 
-  # set PINECONE_API_KEY = pcsk_3ZLDAm_LXkQncYMKCkzpttp7L3A5fkXenEbB2tvZnfEvJZLw4G8mukD74ExzEpqABWvhTe
