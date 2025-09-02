@@ -16,10 +16,10 @@ spring:
         api-key: ${PINECONE_API_KEY} #API key
         environment: us-east1-gcp             #correct Pinecone environment format
         index-name: my-software-docs
-#        namespace: sql_docs       
-
-
-
+#        namespace: sql_docs
+logging:
+  level:
+    root: INFO
 
 server:
   port: 9999

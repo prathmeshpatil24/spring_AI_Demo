@@ -2,14 +2,19 @@ package com.ai.controller;
 
 
 import java.util.List;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,21 +32,26 @@ import com.ai.util.CustomMessageConveter;
 @RequestMapping("/ollama")
 public class ChatController {
 
-    private final ChatClient chatClient;
+
+    private final ChatClient ollamaChatClient;
     private final ChatMemory chatMemory;
     private final CustomMessageConveter messageConveter;
     private final ChatService chatService;
-    private final VectorStore vectorStore;
-  
 
-    public ChatController(ChatClient chatClient, ChatMemory chatMemory, CustomMessageConveter messageConveter, ChatService chatService, VectorStore vectorStore) {
-        this.chatClient = chatClient;
+
+    public ChatController(@Qualifier("ollamaChatClient") ChatClient ollamaChatClient,
+                          ChatMemory chatMemory,
+                          CustomMessageConveter messageConveter,
+                          ChatService chatService
+                          )
+    {
+        this.ollamaChatClient = ollamaChatClient;
         this.chatMemory = chatMemory;
         this.messageConveter = messageConveter;
         this.chatService = chatService;
-        this.vectorStore = vectorStore;
-       
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
     @GetMapping("/{chat}")
     public ResponseEntity<String> getAnswer(@PathVariable String chat){
@@ -50,27 +60,28 @@ public class ChatController {
     	
 //    	// Convert to Message
 //    	Message message=messageConveter.convertToMessage(chat);
-//
 //        // add the user message to chat memory
 //        chatMemory.add("conversation1",message);
-        
-        
+
         // Get full conversation
         List<Message> conversationHistory = chatMemory.get("conversation1");
         chatMemory.add("conversation1", new UserMessage(chat));
 
 		//main logic to get ans from ai model
-        ChatResponse chatResponse = chatClient
+       ChatResponse chatResponse = ollamaChatClient
                 .prompt() // 1. Send your prompt (the user’s query / message)
                 .system("You are a helpful assistant.")
                 .messages(conversationHistory) // add  the conversion history
                 .user(chat) // 1. Send your prompt (the user’s query / message)
-                .call() // 2. Execute the call to the model
+                .call()// 2. Execute the call to the model
                 .chatResponse(); // 3. Get the structured ChatResponse object
+//after call() method we can use .entity() to get data in entity format also (in class we get the response like title, content, createdAt etc)
+
 
        // print the ai model
-//        System.out.println(chatResponse.getMetadata().getModel());
+       //System.out.println(chatResponse.getMetadata().getModel());
 
+        // print the full response
         //build the response in string format
         String response = chatResponse.getResult().getOutput().getText();
         // testing response
@@ -108,13 +119,7 @@ public class ChatController {
       if (question == null || question.isEmpty()) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please provide a valid questions");
 	}
-      
-    
        String ans = chatService.getAnswer(question);
-    	
     	return ResponseEntity.status(HttpStatus.OK).body(ans);
-        
     }
-
-
 }

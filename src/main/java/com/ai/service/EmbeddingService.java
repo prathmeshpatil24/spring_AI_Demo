@@ -1,13 +1,16 @@
 package com.ai.service;
 
-
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,10 +19,14 @@ public class EmbeddingService {
 	private final EmbeddingModel embeddingModel;
 	private final VectorStore vectorStore;
 
-	public EmbeddingService(EmbeddingModel embeddingModel, VectorStore vectorStore) {
+	public EmbeddingService(EmbeddingModel embeddingModel,
+                            VectorStore vectorStore)
+    {
 		this.embeddingModel = embeddingModel;
 		this.vectorStore = vectorStore;
 	}
+
+    private static final Logger logger = LoggerFactory.getLogger(EmbeddingService.class);
 
 //	for string embedding
 	public float[] getEmbedding(String text) {

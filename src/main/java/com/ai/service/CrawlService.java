@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
+
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
@@ -34,34 +35,17 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 //  Handles URL/PDF/JSON crawling & embeddings
 @Service
 public class CrawlService {
 	
 	@Autowired
     private RestTemplate restTemplate;
-    
-//	public List<String> crawlWebPage(String url){
-//		
-//		List<String> results = new ArrayList<>();
-//		
-//		try {
-////            String url = "https://quotes.toscrape.com/";
-//            Document doc = Jsoup.connect(url).get();
-//
-//            Elements quotes = doc.select(".root");
-//
-//            for (Element quote : quotes) {
-//                String data = quote.text();
-//                System.out.println(data);
-//               results.add(data); 
-//            }
-//
-//		} catch (Exception e) {
-//			throw new RuntimeException("Error while crawling the web page" + e.getMessage());
-//		}
-//		return results;
-//	}
+
+    private static final Logger logger = LoggerFactory.getLogger(CrawlService.class);
 	
 //	pdf --> document directly without converting into string
 	public List<Document> crawlPdf(String path) {

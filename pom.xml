@@ -122,6 +122,12 @@
 			<scope>test</scope>
 		</dependency>
 
+        <!-- PERPLEXITY/open ai dependency-->
+<!--        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>-->
+
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
