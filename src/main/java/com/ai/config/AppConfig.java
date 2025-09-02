@@ -1,6 +1,7 @@
 package com.ai.config;
 
 import org.springframework.ai.embedding.EmbeddingOptions;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -12,6 +13,8 @@ public class AppConfig {
 	    public RestTemplate restTemplate() {
 	        return new RestTemplate();
 	    }
+
+
 
 	 
 	 
