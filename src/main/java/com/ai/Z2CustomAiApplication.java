@@ -1,16 +1,11 @@
 package com.ai;
 
-import java.util.List;
-import java.util.Map;
-
 import com.ai.service.DocumentConverter;
 import com.ai.service.scraping.*;
-import org.springframework.ai.document.Document;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
-import com.ai.service.CrawlService;
 import com.ai.service.EmbeddingService;
 
 @SpringBootApplication

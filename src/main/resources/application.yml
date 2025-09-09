@@ -11,6 +11,7 @@ spring:
         options:
           model: llama3.2
           temperature: 0.5
+          max-token:
     vectorstore:
       pinecone:
         api-key: ${PINECONE_API_KEY} #API key
@@ -20,6 +21,12 @@ spring:
 logging:
   level:
     root: INFO
+    org:
+      springframework:
+        ai:
+          chat:
+            client:
+              advisor: DEBUG
 
 server:
   port: 9999

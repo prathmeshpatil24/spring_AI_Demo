@@ -1,6 +1,7 @@
 package com.ai.controller;
 
 
+import java.time.Duration;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ai.service.ChatService;
 import com.ai.util.CustomMessageConveter;
+import reactor.core.publisher.Flux;
+
 
 //Endpoints for chat, RAG queries
 
@@ -54,7 +57,7 @@ public class ChatController {
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
     @GetMapping("/{chat}")
-    public ResponseEntity<String> getAnswer(@PathVariable String chat){
+    public ResponseEntity<?> getAnswer(@PathVariable String chat){
 //    	test data is getting or not here
     	System.out.println("Prompt entered by User:-" +  chat);
     	
@@ -114,7 +117,7 @@ public class ChatController {
     
     // Endpoint to ask a question
     @GetMapping("/query")
-    public ResponseEntity<?> queryVectorStore(@RequestParam String question) {
+    public ResponseEntity<String> queryVectorStore(@RequestParam String question) {
 
       if (question == null || question.isEmpty()) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please provide a valid questions");
@@ -122,4 +125,22 @@ public class ChatController {
        String ans = chatService.getAnswer(question);
     	return ResponseEntity.status(HttpStatus.OK).body(ans);
     }
+
+
+    @GetMapping("/stream")
+    public ResponseEntity<Flux<String>> streamChatting(@RequestParam String q){
+        Flux<String> stringFlux = chatService.streamChat(q);
+        return ResponseEntity.ok(stringFlux);
+    }
+
+    @GetMapping("/stream-demo")
+    public ResponseEntity<Flux<String>> fluxResponseEntity(@RequestParam String q){
+        if (q == null || q.isEmpty()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Flux.just("Please provide a valid questions"));
+        }
+        Flux<String> answerWithStream = chatService.getAnswerWithStream(q);
+        return  ResponseEntity.ok(answerWithStream);
+    }
+
+
 }

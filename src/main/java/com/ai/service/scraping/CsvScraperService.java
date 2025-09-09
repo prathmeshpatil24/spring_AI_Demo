@@ -1,6 +1,5 @@
 package com.ai.service.scraping;
 
-import com.ai.service.CrawlService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
 import org.slf4j.Logger;
@@ -13,8 +12,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.stereotype.Service;
 
 @Service
 public class CsvScraperService {

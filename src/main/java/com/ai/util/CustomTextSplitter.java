@@ -11,8 +11,8 @@ public class CustomTextSplitter {
 
     public List<Document> splitDocument(Document document) {
         TokenTextSplitter splitter = TokenTextSplitter.builder()
-                .withChunkSize(800)
-                .withMaxNumChunks(50)
+                .withChunkSize(1000)
+                .withMaxNumChunks(100)
                 .build();
 
         return splitter.apply(List.of(document));
