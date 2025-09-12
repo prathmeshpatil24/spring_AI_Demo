@@ -3,6 +3,8 @@ package com.ai.controller;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -18,11 +20,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.ai.service.ChatService;
 import com.ai.util.CustomMessageConveter;
@@ -56,8 +54,8 @@ public class ChatController {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
-    @GetMapping("/{chat}")
-    public ResponseEntity<?> getAnswer(@PathVariable String chat){
+    @PostMapping("/ask")
+    public ResponseEntity<?> getAnswer(@RequestBody String chat){
 //    	test data is getting or not here
     	System.out.println("Prompt entered by User:-" +  chat);
     	
@@ -73,8 +71,10 @@ public class ChatController {
 		//main logic to get ans from ai model
        ChatResponse chatResponse = ollamaChatClient
                 .prompt() // 1. Send your prompt (the user’s query / message)
-                .system("You are a helpful assistant.")
-                .messages(conversationHistory) // add  the conversion history
+               .system("Summarize the coming lead data in 3-4 concise bullet points.\n" +
+                       "                Then suggest one clear counselor action to be taken.")
+//                .system("Summarize the following data in 3–4 concise bullet points. Then, suggest one clear counselor_actions to be taken. Keep the response short and actionable.")
+//                .messages(conversationHistory) // add  the conversion history
                 .user(chat) // 1. Send your prompt (the user’s query / message)
                 .call()// 2. Execute the call to the model
                 .chatResponse(); // 3. Get the structured ChatResponse object
@@ -86,14 +86,14 @@ public class ChatController {
 
         // print the full response
         //build the response in string format
-        String response = chatResponse.getResult().getOutput().getText();
+//        String response = chatResponse.getResult().getOutput().getText();
         // testing response
-        System.out.println("Response from Ai model:-" +  response);
+//        System.out.println("Response from Ai model:-" +  response);
         
         // Store AI response in memory
-        chatMemory.add("conversation1", new AssistantMessage(response));
+//        chatMemory.add("conversation1", new AssistantMessage(response));
         
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(chatResponse.getResult().getOutput().getText());
     }
     
     
@@ -114,7 +114,6 @@ public class ChatController {
         System.out.println("chat history is cleared successfully.");
     }
 
-    
     // Endpoint to ask a question
     @GetMapping("/query")
     public ResponseEntity<String> queryVectorStore(@RequestParam String question) {
@@ -125,21 +124,38 @@ public class ChatController {
        String ans = chatService.getAnswer(question);
     	return ResponseEntity.status(HttpStatus.OK).body(ans);
     }
+//=============================================================================
 
-
-    @GetMapping("/stream")
+    @GetMapping("/stream-demo")
     public ResponseEntity<Flux<String>> streamChatting(@RequestParam String q){
         Flux<String> stringFlux = chatService.streamChat(q);
         return ResponseEntity.ok(stringFlux);
     }
 
-    @GetMapping("/stream-demo")
+    @GetMapping("/stream")
     public ResponseEntity<Flux<String>> fluxResponseEntity(@RequestParam String q){
         if (q == null || q.isEmpty()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Flux.just("Please provide a valid questions"));
         }
         Flux<String> answerWithStream = chatService.getAnswerWithStream(q);
         return  ResponseEntity.ok(answerWithStream);
+    }
+
+    @GetMapping("/chatHistory")
+    public ResponseEntity<?> chatHistory(){
+        // here we will take id from user
+        List<Map<String, String>> chatHistory = chatService.getChatHistory();
+        if (chatHistory.isEmpty()){
+            return ResponseEntity.status(HttpStatus.OK).body("Chat history is empty");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(chatHistory);
+    }
+
+    @GetMapping("/clearChatHistory")
+    public ResponseEntity<Void>clearChatHistory(){
+        // here we will take id from user
+        chatService.clearChatHistory();
+        return ResponseEntity.noContent().build();
     }
 
 

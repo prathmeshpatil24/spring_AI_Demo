@@ -1,14 +1,11 @@
 package com.ai.service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import com.ai.controller.ChatController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -30,12 +27,12 @@ import com.ai.util.CustomMessageConveter;
 import reactor.core.publisher.Flux;
 
 // Handles RAG queries with Ollama + Pinecone
-
 @Service
 public class ChatService {
     private final ChatMemory chatMemory;
 	private final ChatClient ollamaChatClient;
 	private final VectorStore vectorStore;
+
 //    @Value("classpath:/prompts/user-message.st")
 //    private Resource userMessage;
 //
@@ -46,7 +43,7 @@ public class ChatService {
     @Qualifier("ollamaChatModel")ChatClient ollamaChatClient,
             ChatMemory chatMemory,
             VectorStore vectorStore
-    )
+          )
     {
         this.ollamaChatClient = ollamaChatClient;
         this.chatMemory = chatMemory;
@@ -54,35 +51,6 @@ public class ChatService {
 	}
 
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
-
-	private  String sanitizeInput(String input) {
-		String[] forbiddenPatterns= {
-				 "ignore previous instructions",
-		            "forget your rules",
-		            "do anything",
-		            "tell me secret",
-		            "password",
-		            "key",
-		            "admin"
-		};
-		
-		 String sanitized = input.toLowerCase();
-		    for (String pattern : forbiddenPatterns) {
-		        sanitized = sanitized.replace(pattern, " ");
-		    }
-		    return sanitized;
-		
-	}
-	
-	private boolean isResponseSafe(String response) {
-	    String[] forbiddenWords = {"password", "key", "secret", "admin"};
-	    for (String word : forbiddenWords) {
-	        if (response.toLowerCase().contains(word)) {
-	            return false;
-	        }
-	    }
-	    return true;
-	}
 
 	public String getAnswer(String query) {
         if (query.equalsIgnoreCase("Hii")) {
@@ -181,7 +149,7 @@ public class ChatService {
 
         Flux<String> content = ollamaChatClient
                 .prompt()
-                .system("you are helpful coding assistance, explain the concept in details")
+                .system("you are helpful Ai assistance")
                 .user(q)
                 .stream()
                 .content();
@@ -190,64 +158,243 @@ public class ChatService {
     }
 
     public Flux<String> getAnswerWithStream(String query) {
+        long overallStartTime = System.currentTimeMillis();
         if (query.equalsIgnoreCase("Hii")) {
             return Flux.just("Hello! How can I assist you today?");
         } else if (query.equalsIgnoreCase("Hello")) {
             return Flux.just("Hi! How can I assist you today?");
         } else {
             // Step 1: Sanitize user query
+            long start = System.currentTimeMillis();
             String safeQuery = sanitizeInput(query);
+            logger.info("Sanitize input took {} ms", System.currentTimeMillis() - start);
 
             // Step 2: Maintain chat history
-            List<Message> conversationHistory = chatMemory.get("conversation1");
+            //currently this is for testing, this will be dynamically
+            String conversationId = "conversation1";
+            start = System.currentTimeMillis();
+            List<Message> conversationHistory = getChatHistoryconversation(conversationId);
+            logger.info("Get chat history took {} ms", System.currentTimeMillis() - start);
 
             // Step 3: Search Pinecone VectorStore with sanitized query
-            List<Document> results = this.vectorStore.similaritySearch(
-                    SearchRequest.builder()
-                            .query(safeQuery)
-                            .topK(8)
-                            .similarityThreshold(0.6)
-                            .build()
-            );
+            start = System.currentTimeMillis();
+            List<Document> results = searchInVectorStoreDB(safeQuery);
+            logger.info("Pinecone search took {} ms", System.currentTimeMillis() - start);
 
             // Step 4: Convert results into readable Strings
-            String context = results.stream()
-                    .map(doc -> "Text: " + doc.getText() +
-                            "\nMetadata: " + doc.getMetadata())
-                    .collect(Collectors.joining("\n--\n"));
+            start = System.currentTimeMillis();
+            String context = buildContext(results);
+            logger.info("Build context took {} ms", System.currentTimeMillis() - start);
 
             // Step 5: Build user prompt
+            // step 5.1 : getting last few messages
+            start = System.currentTimeMillis();
+            String fewPreviousChatMessage = getFewPreviousChatMessage(conversationHistory);
+            logger.info("Collect previous history took {} ms", System.currentTimeMillis() - start);
+            
             String userPrompt =
                     "Context:\n" + context + "\n\n" +
-                            "Q: " + query + "\n" +
-                            "A:";
+                            "Question: " + query + "\n" +
+                            "Previous History: " + fewPreviousChatMessage + "\n" +
+                            "Answer:";
 
             // Step 6: System message (short version to save tokens)
-            String systemMessage = """
-                You are a project assistant.
-                Answer from context only.
-                Respond in clear, structured bullet points.
-                Say "No relevant info found." if answer missing.
-                """;
+            String systemMessage = buildSystemMessage();
 
             // Step 7: Stream response from LLM
-            Flux<String> streamResponse = ollamaChatClient
-                    .prompt()
-                    .system(systemMessage)
-                    .messages(conversationHistory)
-                    .user(userPrompt)
-                    .stream()
-                    .content();
-
-            // Step 5: Post-filter the AI response
-            if (!isResponseSafe(String.valueOf(streamResponse))) {
-                return Flux.just("Sorry, I cannot provide this information.");
-            }
-
-            chatMemory.add("conversation1", new UserMessage(safeQuery));
-            chatMemory.add("conversation1", new AssistantMessage(String.valueOf(streamResponse)));
+//            handle safe llm ans also
+            long llmStart = System.currentTimeMillis();
+            Flux<String> streamResponse = streamResponseWithMemory(conversationId,
+                    safeQuery,
+                    systemMessage,
+                    userPrompt,
+                    conversationHistory);
+            logger.info("LLM call took {} ms",
+                    System.currentTimeMillis() - llmStart);
 
             return streamResponse;
         }
+    }
+
+    private String sanitizeInput(String input) {
+        String[] forbiddenPatterns= {
+                "ignore previous instructions",
+                "forget your rules",
+                "do anything",
+                "tell me secret",
+                "password",
+                "key",
+                "admin"
+        };
+
+        String sanitized = input.toLowerCase();
+        for (String pattern : forbiddenPatterns) {
+            sanitized = sanitized.replace(pattern, " ");
+        }
+        return sanitized;
+
+    }
+
+    private boolean isResponseSafe(String response) {
+        String[] forbiddenWords = {"password", "key", "secret", "admin"};
+        for (String word : forbiddenWords) {
+            if (response.toLowerCase().contains(word)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<Message> getChatHistoryconversation(String conversationId){
+        List<Message> history = chatMemory.get(conversationId);
+        if (history == null){
+            history = new ArrayList<>();
+            logger.info("Created new conversation history for ID: {}", conversationId);
+        }
+        return history;
+    }
+    
+    private List<Document> searchInVectorStoreDB(String safeQuery){
+       try {
+           List<Document> results = this.vectorStore.similaritySearch(
+                   SearchRequest.builder()
+                           .query(safeQuery)
+                           .topK(8)
+                           .similarityThreshold(0.6)
+                           .build()
+           );
+           return  results;
+       }catch (Exception e) {
+           logger.error("Error searching vector store", e);
+           return Collections.emptyList();
+       }
+    }
+
+    private String buildContext(List<Document> results){
+        if (results.isEmpty()){
+            return "\"No relevant context found.";
+        }
+        String context = results.stream()
+                .map(doc -> "Text: " + doc.getText() +
+                        "\nMetadata: " + doc.getMetadata())
+                .collect(Collectors.joining("\n--\n"));
+        return context;
+    }
+
+    private String buildSystemMessage() {
+//        short version to save tokens reduce token size upto 40-50
+        return """
+                You are a project assistant.
+                Answer from context and take Reference from previous Chat also and then
+                Respond in clear, structured bullet points.
+                Say "No relevant info found." if answer missing.
+                """;
+    }
+    
+    private String getFewPreviousChatMessage(List<Message>history){
+//        int size = history.size();
+        int limit = 5; // keep last 5 messages
+        int start = Math.max(0, history.size() - limit);
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = start; i < history.size(); i++) {
+            Message msg = history.get(i);
+            if (msg instanceof UserMessage) {
+                sb.append("User: ").append(msg.getText()).append("\n");
+            } else if (msg instanceof AssistantMessage) {
+                sb.append("Assistant: ").append(msg.getText()).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private Flux<String> streamResponseWithMemory(String conversationId,
+                                                  String userQuery,
+                                                  String systemMessage,
+                                                  String userPrompt,
+                                                  List<Message> conversationHistory){
+
+        // Collect the streaming response
+        long streamResponseTimeStart = System.currentTimeMillis();
+        StringBuilder responseBuilder = new StringBuilder();
+        Flux<String> streamResponse = ollamaChatClient
+                .prompt()
+                .system(systemMessage)
+                .messages(conversationHistory)
+                .user(userPrompt)
+                .stream()
+                .content()
+                .doOnNext(chunk -> {
+                    responseBuilder.append(chunk);
+                })
+                .doOnComplete(()->{
+                    String fullResponse = responseBuilder.toString();
+                    if (isResponseSafe(fullResponse)){
+                        // chat is added in chat memory
+                        addToChatMemory(conversationId, userQuery, fullResponse);
+                    }else {
+                        Flux.just("Sorry, I cannot provide this information.");
+                    }
+                })
+                .doFinally(signal -> logger.info("Total pipeline took {} ms",
+                        System.currentTimeMillis() - streamResponseTimeStart)
+                );
+
+//        streamResponse.collectList()
+//                .map(list -> String.join("", list))
+//                .subscribe(fullResponse -> {
+//                    if (isResponseSafe(fullResponse)) {
+//                        // chat is added in chat memory
+//                        addToChatMemory(conversationId, userQuery, fullResponse);
+//                    }
+//                    else {
+//                        // if response is not safe then this will print
+//                        Flux.just("Sorry, I cannot provide this information.");
+//                    }
+//                });
+
+        return streamResponse;
+
+    }
+
+    private void addToChatMemory(String conversationId,
+                                 String userQuery,
+                                 String assistanceResponse){
+        chatMemory.add(conversationId, new UserMessage(userQuery));
+        chatMemory.add(conversationId, new AssistantMessage(assistanceResponse));
+    }
+
+    public List<Map<String,String>> getChatHistory(){
+       // conversationId will be dynamically
+        String conversationId = "conversation1";
+        List<Message> messages = chatMemory.get(conversationId);
+        if (messages == null){
+            return Collections.emptyList();
+        }
+
+        List<Map<String, String>> chatHistory = messages.stream()
+                .map(msg -> {
+                       Map<String, String> map = new HashMap<>();
+                       if (msg instanceof UserMessage) {
+                           map.put("role", "user");
+                           map.put("text", ((UserMessage) msg).getText());
+                       }
+                       else if (msg instanceof AssistantMessage) {
+                           map.put("role", "assistant");
+                           map.put("text", ((AssistantMessage) msg).getText());
+                       }
+                       // Optional: add timestamp
+                       map.put("timestamp", String.valueOf(System.currentTimeMillis()));
+                      return map;
+                })
+                .collect(Collectors.toList());
+
+        return chatHistory;
+    }
+
+    public void clearChatHistory(){
+        // conversationId will be dynamically
+        String conversationId = "conversation1";
+        chatMemory.clear(conversationId);
     }
 }

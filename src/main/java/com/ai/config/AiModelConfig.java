@@ -28,11 +28,11 @@ public class AiModelConfig {
 // OllamaChatModel bean definition + chat memory + logging method
    @Bean
    @Qualifier("ollamaChatModel")
-    public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel,ChatMemory chatMemory) {
+    public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel) {
          //Builder pattern → gives you flexibility to configure more options.
          //You can add middlewares, configure message converters, interceptors, logging, etc.
        return ChatClient.builder(ollamaChatModel)
-                  .defaultAdvisors(new SimpleLoggerAdvisor())
+//                  .defaultAdvisors(new SimpleLoggerAdvisor())
                   .defaultSystem("You are a custom ai assistant for one particular project.Always respond with structured JSON.")
                   .defaultUser("How can I help you today?")
                   .build();

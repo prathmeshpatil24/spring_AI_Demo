@@ -1,12 +1,8 @@
 package com.ai;
 
-import com.ai.service.DocumentConverter;
-import com.ai.service.scraping.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-
-import com.ai.service.EmbeddingService;
 
 @SpringBootApplication
 public class Z2CustomAiApplication {
@@ -17,6 +13,7 @@ public class Z2CustomAiApplication {
 		System.out.println("Z2 Custom AI Application started successfully.");
 		
 //	    CrawlService crawlService = context.getBean(CrawlService.class);
+       /*
         EmbeddingService embeddingService = context.getBean(EmbeddingService.class);
         DocumentConverter documentConverter = context.getBean(DocumentConverter.class);
         CsvScraperService csvScraperService = context.getBean(CsvScraperService.class);
@@ -25,6 +22,7 @@ public class Z2CustomAiApplication {
         PdfScraperService pdfScraperService = context.getBean(PdfScraperService.class);
         WebScrapingService webScrapingService = context.getBean(WebScrapingService.class);
         JsonApiScraperService jsonApiScraperService = context.getBean(JsonApiScraperService.class);
+        */
 
         /*
         //  web scraping
@@ -94,6 +92,25 @@ public class Z2CustomAiApplication {
         embeddingService.testEmbeddingDocument(documentList);
          */
 
+        /*
+//        flux concept
+        Flux<String> flux = Flux.just("Hello", " ", "World", "!");
+        flux.subscribe(System.out::println);
+//        System.out.println(flux.);
+        System.out.println("============================");
+        String block = flux.collect(Collectors.joining()).block();
+        System.out.println(block);
+         */
+
+//        String chat = "hello how r u";
+//        UserMessage userMessage = new UserMessage(chat);
+//        System.out.println(userMessage);
+//        System.out.println("===========");
+//        System.out.println(userMessage.getText());
+//        System.out.println(userMessage.getClass().getName());
+//       if (userMessage instanceof UserMessage){
+//           System.out.println("userMessage is a Message");
+//       }
 
     }
 }

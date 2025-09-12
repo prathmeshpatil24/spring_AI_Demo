@@ -9,7 +9,9 @@ spring:
       embedding.model: mxbai-embed-large
       chat:
         options:
-          model: llama3.2
+#          model: llama3.2
+          model: mistral:7b
+#          model : gemma3:4b
           temperature: 0.5
           max-token:
     vectorstore:
